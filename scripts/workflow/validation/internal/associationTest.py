@@ -21,7 +21,7 @@ class Annotater:  #Tater?  Tator?  Mmm.. taters.
         hoverRect = mpatches.Rectangle((xint, yint),1,1,fill=False,edgecolor='orange',linewidth=1)
         annotation = str(self.dataset[yint][xint])
         #x+1, y -> One cell up and one cell to the right the way text gets drawn
-        tempText = self.ax.text(xint+1, yint, annotation, horizontalalignment='left', size='large', color='white', weight='semibold')
+        tempText = self.ax.text(xint, yint+1, annotation, horizontalalignment='left', size='large', color='white', weight='semibold')
         print "X:", xint, "Y:", yint, "Val:", annotation
         
         self.ax.add_patch(hoverRect)
@@ -33,8 +33,10 @@ counter = defaultdict(int)
 compartmentSet = set([])
 kmeansSet = set([])
 
+areLabelsIntegers = True #Try parsing labels as integers for nice sorting purposes
+
 header = None
-with open("clusterToLabels.csv") as inputFile:
+with open("clusterToLabelsKMeans.csv") as inputFile:
     reader = csv.reader(inputFile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     for row in reader:
         if header is None:
@@ -42,7 +44,16 @@ with open("clusterToLabels.csv") as inputFile:
             continue
         #row[4],row[5] is compartment,kMeans
         compartmentSet.add(row[4])
-        kmeansSet.add(int(row[5]))
+        if areLabelsIntegers:
+            try:
+                x = int(row[5])
+            except:
+                areLabelsIntegers = False
+
+        if areLabelsIntegers:
+            kmeansSet.add(int(row[5]))
+        else:
+            kmeansSet.add(row[5])
         counter[(row[4], row[5])] += 1
 
 compartmentList = sorted(list(compartmentSet))
@@ -63,7 +74,11 @@ for y in compartmentList:
 chi2, p, dof, E = chi2_contingency(O)
 print "Chi Sq: ", chi2
 print "P-Value: ", p
-print "Degrees Of Freedom: ", dof,
+print "Degrees Of Freedom: ", dof
+
+OMinusE = numpy.subtract(O,E)
+OMinusESqOverE = numpy.divide(numpy.multiply(OMinusE, OMinusE), E)
+print "SUM: ", numpy.sum(OMinusESqOverE)
 
 
 #PLOT OBSERVED
@@ -84,7 +99,6 @@ plt.show()
 plt.gcf().canvas.mpl_disconnect(cid)
 
 #PLOT OBSERVED - EXPECTED
-OMinusE = numpy.subtract(O,E)
 ax = sns.heatmap(OMinusE, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
 plt.title("Observed - Expected")
 annotate = Annotater(OMinusE, plt.gca(), plt.gcf())
@@ -93,7 +107,6 @@ plt.show()
 plt.gcf().canvas.mpl_disconnect(cid)
 
 #PLOT (OBSERVED - EXPECTED)^2 / EXPECTED
-OMinusESqOverE = numpy.divide(numpy.multiply(OMinusE, OMinusE), E)
 ax = sns.heatmap(OMinusESqOverE, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
 plt.title("(O-E)^2 / E")
 annotate = Annotater(OMinusESqOverE, plt.gca(), plt.gcf())
@@ -117,5 +130,6 @@ cidRight = plt.gcf().canvas.mpl_connect('motion_notify_event', annotateRight.onM
 plt.figtext(0.5, 0.01, "WARNING: From Scipy Docs: An often quoted guideline for the validity of this calculation is that the test should be used only if the observed and expected frequencies in each cell are at least 5.", wrap=True, horizontalalignment='center', fontsize=12)
 
 plt.show()
+
 plt.gcf().canvas.mpl_disconnect(cidLeft)
 plt.gcf().canvas.mpl_disconnect(cidRight)

@@ -187,14 +187,17 @@ def main(clusterColumn, csvFile):
     print("Clustering with k means")
     #And we will compare it to kmeans clustered data with the same number of clusters
     kmeansClusteredData = pickKmeansClusters(header, data, len(clusteredData), dataStartCol)
-    
+
     print("Printing clusterToLabels.csv")
-    with open("clusterToLabels.csv", "w") as outputFile:
+    with open("clusterToLabelsKMeans2.csv", "w") as outputFile:
         writer = csv.writer(outputFile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(header[0:dataStartCol] + ["KMeans"])
         for label in kmeansClusteredData:
             for dataRow in kmeansClusteredData[label]:
-                writer.writerow(dataRow[0:dataStartCol] + [label])
+                labelStr = str(label)
+                if labelStr is None or len(labelStr) == 0:
+                    labelStr = "None"
+                writer.writerow(dataRow[0:dataStartCol] + [labelStr])
 
     print("Running silhouette analysis")
     #Generate silhouette scores on the three clusterings, real, randomUniformSize and randomRealSize
