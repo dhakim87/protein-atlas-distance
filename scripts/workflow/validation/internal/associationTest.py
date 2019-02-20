@@ -5,6 +5,25 @@ import matplotlib.pylab as plt
 from scipy.stats import chi2_contingency
 import numpy
 import matplotlib.patches as mpatches
+import sys
+
+PLOT = True
+ONLY_LAST = False
+INPUT_FILE = None
+
+if len(sys.argv) == 1:
+    print "USAGE: python " + sys.argv[0] + " <inputfile> "
+    print "USAGE: python " + sys.argv[0] + " <inputfile> --no-plots"
+    print "USAGE: python " + sys.argv[0] + " <inputfile> --only-last"
+    sys.exit()
+
+for arg in sys.argv[1:]:
+    if arg == "--no-plots":
+        PLOT = False
+    if arg == "--only-last":
+        ONLY_LAST = True
+    if not arg.startswith("--"):
+        INPUT_FILE = arg
 
 class Annotater:  #Tater?  Tator?  Mmm.. taters.
     def __init__(self, dataset, ax, fig):
@@ -36,7 +55,7 @@ kmeansSet = set([])
 areLabelsIntegers = True #Try parsing labels as integers for nice sorting purposes
 
 header = None
-with open("clusterToLabelsKMeans.csv") as inputFile:
+with open(INPUT_FILE) as inputFile:
     reader = csv.reader(inputFile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     for row in reader:
         if header is None:
@@ -80,56 +99,57 @@ OMinusE = numpy.subtract(O,E)
 OMinusESqOverE = numpy.divide(numpy.multiply(OMinusE, OMinusE), E)
 print "SUM: ", numpy.sum(OMinusESqOverE)
 
+if PLOT:
+    if not ONLY_LAST:
+        #PLOT OBSERVED
+        ax = sns.heatmap(O, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
+        plt.title("Observed")
 
-#PLOT OBSERVED
-ax = sns.heatmap(O, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
-plt.title("Observed")
+        annotate = Annotater(O, plt.gca(), plt.gcf())
+        cid = plt.gcf().canvas.mpl_connect('motion_notify_event', annotate.onMotion)
+        plt.show()
+        plt.gcf().canvas.mpl_disconnect(cid)
 
-annotate = Annotater(O, plt.gca(), plt.gcf())
-cid = plt.gcf().canvas.mpl_connect('motion_notify_event', annotate.onMotion)
-plt.show()
-plt.gcf().canvas.mpl_disconnect(cid)
+        #PLOT EXPECTED
+        ax = sns.heatmap(E, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
+        plt.title("Expected")
+        annotate = Annotater(E, plt.gca(), plt.gcf())
+        cid = plt.gcf().canvas.mpl_connect('motion_notify_event', annotate.onMotion)
+        plt.show()
+        plt.gcf().canvas.mpl_disconnect(cid)
 
-#PLOT EXPECTED
-ax = sns.heatmap(E, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
-plt.title("Expected")
-annotate = Annotater(E, plt.gca(), plt.gcf())
-cid = plt.gcf().canvas.mpl_connect('motion_notify_event', annotate.onMotion)
-plt.show()
-plt.gcf().canvas.mpl_disconnect(cid)
+        #PLOT OBSERVED - EXPECTED
+        ax = sns.heatmap(OMinusE, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
+        plt.title("Observed - Expected")
+        annotate = Annotater(OMinusE, plt.gca(), plt.gcf())
+        cid = plt.gcf().canvas.mpl_connect('motion_notify_event', annotate.onMotion)
+        plt.show()
+        plt.gcf().canvas.mpl_disconnect(cid)
 
-#PLOT OBSERVED - EXPECTED
-ax = sns.heatmap(OMinusE, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
-plt.title("Observed - Expected")
-annotate = Annotater(OMinusE, plt.gca(), plt.gcf())
-cid = plt.gcf().canvas.mpl_connect('motion_notify_event', annotate.onMotion)
-plt.show()
-plt.gcf().canvas.mpl_disconnect(cid)
+        #PLOT (OBSERVED - EXPECTED)^2 / EXPECTED
+        ax = sns.heatmap(OMinusESqOverE, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
+        plt.title("(O-E)^2 / E")
+        annotate = Annotater(OMinusESqOverE, plt.gca(), plt.gcf())
+        cid = plt.gcf().canvas.mpl_connect('motion_notify_event', annotate.onMotion)
+        plt.show()
+        plt.gcf().canvas.mpl_disconnect(cid)
 
-#PLOT (OBSERVED - EXPECTED)^2 / EXPECTED
-ax = sns.heatmap(OMinusESqOverE, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
-plt.title("(O-E)^2 / E")
-annotate = Annotater(OMinusESqOverE, plt.gca(), plt.gcf())
-cid = plt.gcf().canvas.mpl_connect('motion_notify_event', annotate.onMotion)
-plt.show()
-plt.gcf().canvas.mpl_disconnect(cid)
+    #PLOT E AND (O-E)^2/E
+    plt.subplot(1, 2, 1)
+    ax = sns.heatmap(E, linewidth=0.5, square=True,xticklabels=xLabels, yticklabels=yLabels, annot=False)
+    ax.set_title("E")
+    annotateLeft = Annotater(E, ax, plt.gcf())
+    cidLeft = plt.gcf().canvas.mpl_connect('motion_notify_event', annotateLeft.onMotion)
 
-#PLOT E AND (O-E)^2/E
-plt.subplot(1, 2, 1)
-ax = sns.heatmap(E, linewidth=0.5, square=True, annot=False)
-ax.set_title("E")
-annotateLeft = Annotater(E, ax, plt.gcf())
-cidLeft = plt.gcf().canvas.mpl_connect('motion_notify_event', annotateLeft.onMotion)
+    plt.subplot(1, 2, 2)
+    ax = sns.heatmap(OMinusESqOverE, linewidth=0.5,xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False, vmin=0, vmax=500)
+    ax.set_title("(O-E)^2 / E")
+    annotateRight = Annotater(OMinusESqOverE, ax, plt.gcf())
+    cidRight = plt.gcf().canvas.mpl_connect('motion_notify_event', annotateRight.onMotion)
 
-plt.subplot(1, 2, 2)
-ax = sns.heatmap(OMinusESqOverE, linewidth=0.5, square=True, annot=False)
-ax.set_title("(O-E)^2 / E")
-annotateRight = Annotater(OMinusESqOverE, ax, plt.gcf())
-cidRight = plt.gcf().canvas.mpl_connect('motion_notify_event', annotateRight.onMotion)
+    plt.figtext(0.5, 0.01, "WARNING: From Scipy Docs: An often quoted guideline for the validity of this calculation is that the test should be used only if the observed and expected frequencies in each cell are at least 5.", wrap=True, horizontalalignment='center', fontsize=12)
 
-plt.figtext(0.5, 0.01, "WARNING: From Scipy Docs: An often quoted guideline for the validity of this calculation is that the test should be used only if the observed and expected frequencies in each cell are at least 5.", wrap=True, horizontalalignment='center', fontsize=12)
+    plt.show()
 
-plt.show()
-
-plt.gcf().canvas.mpl_disconnect(cidLeft)
-plt.gcf().canvas.mpl_disconnect(cidRight)
+    plt.gcf().canvas.mpl_disconnect(cidLeft)
+    plt.gcf().canvas.mpl_disconnect(cidRight)
