@@ -5,12 +5,34 @@ import sys;
 from sklearn.manifold import TSNE
 from matplotlib.widgets import CheckButtons
 
-INPUT_FILE = "output-activation_28-pca.csv"
+print("------------------------")
+INPUT_FILE = None
+
+for arg in sys.argv[1:]:
+    ss = arg.split("=")
+    if len(ss) >= 2:
+        if ss[0] == "INPUT":
+            INPUT_FILE = ss[1]
+        else:
+            raise Exception("Unknown Command: " + arg);
+    else:
+        raise Exception("Unknown Command: " + arg);
+
+if len(sys.argv) == 1 or "--help" in sys.argv:
+    print "Usage: "
+    print "python " + sys.argv[0] + " INPUT=<pathToCSVFile>"
+    print ""
+    print "Ex: python " + sys.argv[0] + " INPUT=output-activation_28.csv"
+
+if INPUT_FILE == None:
+    print("------------------------")
+    sys.exit()
 
 dotIndex = INPUT_FILE.rindex('.')
 OUTPUT_FILE = INPUT_FILE[0:dotIndex] + "-tsne.csv"
 
 print INPUT_FILE + " -> " + OUTPUT_FILE
+print("------------------------")
 
 def readCSV(filename, parseHeader = True):
     header = None
