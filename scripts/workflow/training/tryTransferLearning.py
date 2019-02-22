@@ -159,8 +159,8 @@ def trainWithGenerator(imageURLs, categories, model):
     trainingTuples = allTuples[0:cutoff]
     validationTuples = allTuples[cutoff:]
 
-    print "Num Training:   " + str(len(trainingTuples))
-    print "Num Validation: " + str(len(validationTuples))
+    print("Num Training:   " + str(len(trainingTuples)))
+    print("Num Validation: " + str(len(validationTuples)))
 
     trainingImages = [i[0] for i in trainingTuples]
     trainingCategories = [i[1] for i in trainingTuples]
@@ -183,7 +183,7 @@ def trainWithGenerator(imageURLs, categories, model):
                           max_queue_size=32,
                           shuffle=True)
 
-    print "Training Run Identifier: " + str(trainingRunIdentifier)
+    print("Training Run Identifier: " + str(trainingRunIdentifier))
     model.save("modelFinal-" + str(trainingRunIdentifier) + ".h5")
 
     # plot the training loss and accuracy
@@ -198,7 +198,7 @@ def trainWithGenerator(imageURLs, categories, model):
     plt.legend(loc="upper right")
     plt.savefig(str(trainingRunIdentifier)+".png")
 
-    print "History Image Saved To: " + str(trainingRunIdentifier) + ".png"
+    print("History Image Saved To: " + str(trainingRunIdentifier) + ".png")
 
 
 def randomBatchGenerator(fileURLs, oneHots, batch_size = 32):
@@ -257,7 +257,7 @@ def processCategories(y_batch):
 def customFlow(x_train, y_train, batch_size=32):
     while True:
         for x_batch, y_batch in randomBatchGenerator(x_train, y_train, batch_size):
-            print zip(x_batch, y_batch)
+            print(zip(x_batch, y_batch))
             processed_x_batch = processImageBatch(x_batch)
             processed_y_batch = processCategories(y_batch)
             yield (processed_x_batch, processed_y_batch)
