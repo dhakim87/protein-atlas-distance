@@ -19,6 +19,7 @@ import uuid
 LAST_FROZEN_LAYER = "add_9"
 NUM_EPOCHS = 150
 NUM_OUTPUT_CATEGORIES = 32
+SHUFFLE_SEED = 127
 TRAINING_FRACTION = .75
 CATEGORY_TO_NUMBER = {}
 
@@ -86,7 +87,7 @@ def listTrainingURLs(trainingDir):
                 print("CORRUPT FILE: " + os.path.join(root,filename))
                 continue
             imageURLs.append(os.path.join(root,filename))
-    return imageURLs[0:50]
+    return imageURLs
 
 def lookupTrainingOutputs(trainingURLs, dbPath):
     categories = []
@@ -96,8 +97,8 @@ def lookupTrainingOutputs(trainingURLs, dbPath):
         start = imageURL.index("/images/")
         if start < 0:
             raise Exception("Couldn't parse image URL")
-        imgURLTuple = ("%" + imageURL[start:],)
-        cur.execute("SELECT * FROM image WHERE url LIKE ?", imgURLTuple)
+        imgURLTuple = ("http://v18.proteinatlas.org" + imageURL[start:],)
+        cur.execute("SELECT * FROM image WHERE url = ?", imgURLTuple)
         rows = cur.fetchall()
         if len(rows) < 1:
             raise Exception("COULDNT FIND ROW FOR: " + imgURLTuple[0])
@@ -114,7 +115,7 @@ def lookupTrainingOutputs(trainingURLs, dbPath):
             CATEGORY_TO_NUMBER[category] = numberGen;
             numberGen += 1
 
-    if len(CATEGORY_TO_NUMBER) >= NUM_OUTPUT_CATEGORIES:
+    if len(CATEGORY_TO_NUMBER) > NUM_OUTPUT_CATEGORIES:
         print("NOT ENOUGH CATEGORIES IN OUTPUT")
 
     sortedCategories = [None] * NUM_OUTPUT_CATEGORIES
@@ -153,7 +154,7 @@ def trainWithGenerator(imageURLs, categories, model):
     allTuples = []
     for i in range(len(imageURLs)):
         allTuples.append((imageURLs[i], categories[i]))
-    random.shuffle(allTuples)
+    random.Random(SHUFFLE_SEED).shuffle(allTuples)
 
     cutoff = int(len(allTuples) * TRAINING_FRACTION)
     trainingTuples = allTuples[0:cutoff]
@@ -187,18 +188,17 @@ def trainWithGenerator(imageURLs, categories, model):
     model.save("modelFinal-" + str(trainingRunIdentifier) + ".h5")
 
     # plot the training loss and accuracy
-    plt.figure()
-    plt.plot(np.arange(0, NUM_EPOCHS), H.history["loss"], label="train_loss")
-    plt.plot(np.arange(0, NUM_EPOCHS), H.history["val_loss"], label="val_loss")
-    plt.plot(np.arange(0, NUM_EPOCHS), H.history["acc"], label="train_acc")
-    plt.plot(np.arange(0, NUM_EPOCHS), H.history["val_acc"], label="val_acc")
-    plt.title("Training Loss and Accuracy")
-    plt.xlabel("Epoch #")
-    plt.ylabel("Loss/Accuracy")
-    plt.legend(loc="upper right")
-    plt.savefig(str(trainingRunIdentifier)+".png")
-
-    print("History Image Saved To: " + str(trainingRunIdentifier) + ".png")
+#    plt.figure()
+#    plt.plot(np.arange(0, NUM_EPOCHS), H.history["loss"], label="train_loss")
+#    plt.plot(np.arange(0, NUM_EPOCHS), H.history["val_loss"], label="val_loss")
+#    plt.plot(np.arange(0, NUM_EPOCHS), H.history["acc"], label="train_acc")
+#    plt.plot(np.arange(0, NUM_EPOCHS), H.history["val_acc"], label="val_acc")
+#    plt.title("Training Loss and Accuracy")
+#    plt.xlabel("Epoch #")
+#    plt.ylabel("Loss/Accuracy")
+#    plt.legend(loc="upper right")
+#    plt.savefig(str(trainingRunIdentifier)+".png")
+#    print("History Image Saved To: " + str(trainingRunIdentifier) + ".png")
 
 
 def randomBatchGenerator(fileURLs, oneHots, batch_size = 32):
