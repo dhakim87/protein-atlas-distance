@@ -16,7 +16,9 @@ import random
 import sqlite3
 import uuid
 
-LAST_FROZEN_LAYER = "add_9"
+LAST_FROZEN_LAYER = "add_4"
+CHOP_LAYER = "activation_28"
+
 NUM_EPOCHS = 150
 NUM_OUTPUT_CATEGORIES = 32
 SHUFFLE_SEED = 127
@@ -54,11 +56,10 @@ class BatchGenerator(Sequence):
 
 def createTransferModel():
     resnetModel = resnet50.ResNet50(weights="imagenet", include_top=False)  #Pre trained on ImageNet but without the final layer reducing to 1000 categories
-
-    x = resnetModel.output
-    x = GlobalAveragePooling2D()(x) #appears that include_top=False chops off the GlobalAveragePooling2D layer as well.
-
-    #Toss on a new dense layer, maybe we should use more than one
+    
+    chop = resnetModel.get_layer(CHOP_LAYER);
+    x = chop.output
+    x = GlobalAveragePooling2D()(x)
     preds = Dense(NUM_OUTPUT_CATEGORIES, activation='softmax')(x)
 
     transferModel = Model(inputs=resnetModel.input, outputs=preds)
@@ -67,7 +68,6 @@ def createTransferModel():
 #    plot_model(transferModel, to_file='transfer_model.svg');
 #    print transferModel.summary();
 
-    #let's disable training for everything prior to add_13 (look at transfer_model.svg to get a better sense of where this is, it leaves about 3 more of the repeated convolution / skip constructs)
     for layer in transferModel.layers:
         layer.trainable = False
         if layer.name == LAST_FROZEN_LAYER:
