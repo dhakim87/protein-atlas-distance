@@ -68,4 +68,3 @@ with open(COMBINED_OUTPUT_FILE, "w") as csvFile:
         for pair in yueDistanceDict:
             if pair not in danDistanceDict:
                 errors.writerow((pair[0],pair[1], "YUE"))
-
