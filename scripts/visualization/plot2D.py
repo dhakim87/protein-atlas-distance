@@ -3,10 +3,12 @@ import csv;
 import sys;
 import os;
 import random
+from urlparse import urlparse;
 from matplotlib.widgets import CheckButtons
 from matplotlib.widgets import LassoSelector
 from matplotlib.path import Path
 import requests
+import subprocess
 
 INPUT_FILE = "output-activation_28-merged.csv"
 MARKER_COL = "compartment"
@@ -185,6 +187,29 @@ def onCheckboxChanged(label):
             scatters[i].set_visible(not scatters[i].get_visible())
     plt.draw()
 
+def downloadSelected(rootFolder, numImages):
+    for i in range(len(scatters)):
+        if scatters[i].get_visible():
+            wrapper = selector.wrappers[i]
+            rawIndices = createIndexList(markerBy == allMarkers[i])
+            for rawIndex in rawIndices[wrapper.ind]:
+                print data[rawIndex][0:5]
+            rawShuffle = list(rawIndices[wrapper.ind])
+            random.shuffle(rawShuffle)
+            for rawIndex in rawShuffle[:min(numImages,len(rawShuffle))]:
+                url = data[rawIndex][0]
+                color = data[rawIndex][colorIndex]
+                if not os.path.exists(rootFolder):
+                    os.makedirs(rootFolder)
+                if not os.path.exists(rootFolder + "/" + str(color)):
+                    os.makedirs(rootFolder + "/" + str(color))
+                
+                s = ("".join(data[rawIndex][1:dataStartCol])).replace(" ", "_");
+                
+                with open(rootFolder + "/" + str(color) + "/" + s + "-" + str(rawIndex)+".jpg", 'w') as f:
+                    resp = requests.get(url)
+                    f.write(resp.content)
+
 def accept(event):
     if event.key == "enter":
         print("Visible Scatters:")
@@ -199,41 +224,13 @@ def accept(event):
                 for rawIndex in rawIndices[wrapper.ind]:
                     print data[rawIndex][0:5]
     if event.key == "a":
-        print("Downloading 10 random images")
-        for i in range(len(scatters)):
-            if scatters[i].get_visible():
-                wrapper = selector.wrappers[i]
-                rawIndices = createIndexList(markerBy == allMarkers[i])
-                for rawIndex in rawIndices[wrapper.ind]:
-                    print data[rawIndex][0:5]
-                rawShuffle = list(rawIndices[wrapper.ind])
-                random.shuffle(rawShuffle)
-                for rawIndex in rawShuffle[:min(10,len(rawShuffle))]:
-                    url = data[rawIndex][0]
-                    print(url)
-                    if not os.path.exists("A"):
-                        os.makedirs("A")
-                    with open("A/"+str(rawIndex)+".jpg", 'w') as f:
-                        resp = requests.get(url)
-                        f.write(resp.content)
+        downloadSelected("A", 10)
+        os.system("open A")
+
+
     if event.key == "b":
-        print("Downloading 10 random images")
-        for i in range(len(scatters)):
-            if scatters[i].get_visible():
-                wrapper = selector.wrappers[i]
-                rawIndices = createIndexList(markerBy == allMarkers[i])
-                for rawIndex in rawIndices[wrapper.ind]:
-                    print data[rawIndex][0:5]
-                rawShuffle = list(rawIndices[wrapper.ind])
-                random.shuffle(rawShuffle)
-                for rawIndex in rawShuffle[:min(10,len(rawShuffle))]:
-                    url = data[rawIndex][0]
-                    print(url)
-                    if not os.path.exists("B"):
-                        os.makedirs("B")
-                    with open("B/"+str(rawIndex)+".jpg", 'w') as f:
-                        resp = requests.get(url)
-                        f.write(resp.content)
+        downloadSelected("B", 10)
+        os.system("open B")
 
 fig.canvas.mpl_connect("key_press_event", accept)
 
