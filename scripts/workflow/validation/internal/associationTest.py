@@ -10,6 +10,12 @@ import sys
 PLOT = True
 ONLY_LAST = False
 INPUT_FILE = None
+COMPARTMENT_COL = 4
+KMEANS_COL = 5
+DELIMETER = "\t"
+
+LINE_WIDTH = 0.0
+
 
 if len(sys.argv) == 1:
     print "USAGE: python " + sys.argv[0] + " <inputfile> "
@@ -56,24 +62,23 @@ areLabelsIntegers = True #Try parsing labels as integers for nice sorting purpos
 
 header = None
 with open(INPUT_FILE) as inputFile:
-    reader = csv.reader(inputFile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    reader = csv.reader(inputFile, delimiter=DELIMETER, quotechar='|', quoting=csv.QUOTE_MINIMAL)
     for row in reader:
         if header is None:
             header = row
             continue
-        #row[4],row[5] is compartment,kMeans
-        compartmentSet.add(row[4])
+        compartmentSet.add(row[COMPARTMENT_COL])
         if areLabelsIntegers:
             try:
-                x = int(row[5])
+                x = int(row[KMEANS_COL])
             except:
                 areLabelsIntegers = False
 
         if areLabelsIntegers:
-            kmeansSet.add(int(row[5]))
+            kmeansSet.add(int(row[KMEANS_COL]))
         else:
-            kmeansSet.add(row[5])
-        counter[(row[4], row[5])] += 1
+            kmeansSet.add(row[KMEANS_COL])
+        counter[(row[COMPARTMENT_COL], row[KMEANS_COL])] += 1
 
 compartmentList = sorted(list(compartmentSet))
 kmeansList = sorted(list(kmeansSet))
@@ -102,7 +107,7 @@ print "SUM: ", numpy.sum(OMinusESqOverE)
 if PLOT:
     if not ONLY_LAST:
         #PLOT OBSERVED
-        ax = sns.heatmap(O, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
+        ax = sns.heatmap(O, linewidth=LINE_WIDTH, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
         plt.title("Observed")
 
         annotate = Annotater(O, plt.gca(), plt.gcf())
@@ -111,7 +116,7 @@ if PLOT:
         plt.gcf().canvas.mpl_disconnect(cid)
 
         #PLOT EXPECTED
-        ax = sns.heatmap(E, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
+        ax = sns.heatmap(E, linewidth=LINE_WIDTH, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
         plt.title("Expected")
         annotate = Annotater(E, plt.gca(), plt.gcf())
         cid = plt.gcf().canvas.mpl_connect('motion_notify_event', annotate.onMotion)
@@ -119,7 +124,7 @@ if PLOT:
         plt.gcf().canvas.mpl_disconnect(cid)
 
         #PLOT OBSERVED - EXPECTED
-        ax = sns.heatmap(OMinusE, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
+        ax = sns.heatmap(OMinusE, linewidth=LINE_WIDTH, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
         plt.title("Observed - Expected")
         annotate = Annotater(OMinusE, plt.gca(), plt.gcf())
         cid = plt.gcf().canvas.mpl_connect('motion_notify_event', annotate.onMotion)
@@ -127,7 +132,7 @@ if PLOT:
         plt.gcf().canvas.mpl_disconnect(cid)
 
         #PLOT (OBSERVED - EXPECTED)^2 / EXPECTED
-        ax = sns.heatmap(OMinusESqOverE, linewidth=0.5, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
+        ax = sns.heatmap(OMinusESqOverE, linewidth=LINE_WIDTH, xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False)
         plt.title("(O-E)^2 / E")
         annotate = Annotater(OMinusESqOverE, plt.gca(), plt.gcf())
         cid = plt.gcf().canvas.mpl_connect('motion_notify_event', annotate.onMotion)
@@ -136,13 +141,13 @@ if PLOT:
 
     #PLOT E AND (O-E)^2/E
     plt.subplot(1, 2, 1)
-    ax = sns.heatmap(E, linewidth=0.5, square=True,xticklabels=xLabels, yticklabels=yLabels, annot=False)
+    ax = sns.heatmap(E, linewidth=LINE_WIDTH, square=True,xticklabels=xLabels, yticklabels=yLabels, annot=False)
     ax.set_title("E")
     annotateLeft = Annotater(E, ax, plt.gcf())
     cidLeft = plt.gcf().canvas.mpl_connect('motion_notify_event', annotateLeft.onMotion)
 
     plt.subplot(1, 2, 2)
-    ax = sns.heatmap(OMinusESqOverE, linewidth=0.5,xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False, vmin=0, vmax=500)
+    ax = sns.heatmap(OMinusESqOverE, linewidth=LINE_WIDTH,xticklabels=xLabels, yticklabels=yLabels, square=True, annot=False, vmin=0, vmax=500)
     ax.set_title("(O-E)^2 / E")
     annotateRight = Annotater(OMinusESqOverE, ax, plt.gcf())
     cidRight = plt.gcf().canvas.mpl_connect('motion_notify_event', annotateRight.onMotion)
